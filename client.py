@@ -1,14 +1,18 @@
 import asyncio
 import os
+import importlib
 from typing import Optional
 from beanie import init_beanie
-import bson
 from dotenv import load_dotenv
 
 from motor.motor_asyncio import AsyncIOMotorClient
+from .models import models
+try:
+    from ether.core.utils import LevelsHandler
+    levels_handler_import = True
+except ImportError:
+    levels_handler_import = False
 
-from ether.core.utils import LevelsHandler
-import ether.core.db.models as models
 
 class Database:   
 
@@ -85,6 +89,8 @@ class Database:
             return None
 
         async def add_exp(user_id, guild_id, amount):
+            if not levels_handler_import: return
+            
             user = await Database.GuildUser.get_or_none(user_id, guild_id)
             
             if not user:
