@@ -1,12 +1,10 @@
 import asyncio
 import os
-import importlib
 from typing import Optional
 from beanie import init_beanie
-from dotenv import load_dotenv
 
 from motor.motor_asyncio import AsyncIOMotorClient
-from .models import models
+from .models import (Guild, GuildUser, Logs, JoinLog, LeaveLog, ModerationLog, User, Playlist, ReactionRole, ReactionRoleOption)
 try:
     from ether.core.utils import LevelsHandler
     levels_handler_import = True
@@ -14,14 +12,14 @@ except ImportError:
     levels_handler_import = False
 
 
-class Database:   
+class Database:
 
     client = None
 
 
     class Guild:
         async def create(guild_id: int):
-            guild = models.Guild(id=guild_id)
+            guild = Guild(id=guild_id)
             
             await guild.insert()
             
@@ -35,7 +33,7 @@ class Database:
             return await Database.Guild.create(guild_id)
         
         async def get_or_none(guild_id: int):
-            guild = await models.Guild.find_one(models.Guild.id == guild_id)
+            guild = await Guild.find_one(Guild.id == guild_id)
             if guild:
                 return guild
             
@@ -50,16 +48,16 @@ class Database:
                         return None
                     
                     if channel_id:
-                        moderation_logs = models.ModerationLog(channel_id=channel_id, enabled=enabled)
+                        moderation_logs = ModerationLog(channel_id=channel_id, enabled=enabled)
                     else:
                         if not (guild.logs and guild.logs.moderation):
                             return None
-                        moderation_logs = models.ModerationLog(channel_id=guild.logs.moderation.channel_id, enabled=enabled)
+                        moderation_logs = ModerationLog(channel_id=guild.logs.moderation.channel_id, enabled=enabled)
                     
                     if guild.logs:
-                        await guild.set({models.Guild.logs.moderation: moderation_logs})
+                        await guild.set({Guild.logs.moderation: moderation_logs})
                     else:
-                        await guild.set({models.Guild.logs: models.Logs(moderation=moderation_logs)})
+                        await guild.set({Guild.logs: Logs(moderation=moderation_logs)})
                         
                     return True
                     
@@ -68,7 +66,7 @@ class Database:
     
     class GuildUser:
         async def create(user_id: int, guild_id: int):
-            user = models.GuildUser(id=user_id, guild_id=guild_id)
+            user = GuildUser(id=user_id, guild_id=guild_id)
             
             await user.insert()
             
@@ -82,7 +80,7 @@ class Database:
             return await Database.GuildUser.create(user_id, guild_id)
         
         async def get_or_none(user_id: int, guild_id: int):
-            user = await models.GuildUser.find_one(models.GuildUser.id == user_id and models.GuildUser.guild_id == guild_id)
+            user = await GuildUser.find_one(GuildUser.id == user_id and GuildUser.guild_id == guild_id)
             if user:
                 return user
             
@@ -99,21 +97,21 @@ class Database:
             new_exp = user.exp + amount
             next_level = LevelsHandler.get_next_level(user.levels)
             if next_level <= new_exp:
-                await user.set({models.GuildUser.exp: new_exp - next_level, models.GuildUser.levels: user.levels + 1})
+                await user.set({GuildUser.exp: new_exp - next_level, GuildUser.levels: user.levels + 1})
                 return user.levels
             
-            await user.set({models.GuildUser.exp: new_exp})
+            await user.set({GuildUser.exp: new_exp})
         
 
 async def init_database():
-    load_dotenv()
-    Database.client = AsyncIOMotorClient(os.getenv("MONGO_DB_URI")).dbot
+    Database.client = AsyncIOMotorClient(os.environ["MONGO_DB_URI"]).dbot
     
-    # FIXME
     await init_beanie(
-        database=Database.client, document_models=[models.Guild, models.GuildUser, models.User]
+        database=Database.client, document_models=[Guild, GuildUser, User]
     )
     
-    models._database = Database
+    _database = Database
 
-asyncio.run(init_database())
+
+loop = asyncio.get_event_loop()
+loop.create_task(init_database())
