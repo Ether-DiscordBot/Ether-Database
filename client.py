@@ -1,6 +1,6 @@
 import asyncio
 import os
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from beanie import init_beanie, Document
 from discord.ext.commands import Context
@@ -117,7 +117,7 @@ class Database:
             await user.set({GuildUser.exp: new_exp})
 
     class ReactionRole:
-        async def create(message_id: int, options: ReactionRoleOption):
+        async def create(message_id: int, options: List):
             reaction = ReactionRole(message_id=message_id, options=options)
 
             await reaction.insert()
@@ -141,8 +141,8 @@ class Database:
             return None
 
         class ReactionRoleOption:
-            async def create(role_id, reaction_id):
-                option = ReactionRoleOption(role_id=role_id, reaction_id=reaction_id)
+            async def create(role_id: int, reaction: str):
+                option = ReactionRoleOption(role_id=role_id, reaction=reaction)
 
                 return option
 
@@ -255,7 +255,7 @@ class Playlist(Document):
 
 class ReactionRoleOption(BaseModel):
     role_id: int
-    reaction_id: int
+    reaction: int
 
 
 class ReactionRole(Document):
