@@ -106,6 +106,29 @@ class Database:
                 return user.levels
             
             await user.set({GuildUser.exp: new_exp})
+    
+    
+    class ReactionRole():
+        async def create(message_id, options):
+            reaction = ReactionRole(message_id=message_id, options=options)
+            
+            await reaction.insert()
+            
+            return await Database.ReactionRole.get_or_none(message_id)
+        
+        async def get_or_create(message_id: int):
+            user = await Database.ReactionRole.get_or_none(message_id)
+            if user:
+                return user
+            
+            return await Database.ReactionRole.create(message_id)
+        
+        async def get_or_none(message_id: int):
+            user = await ReactionRole.find_one(ReactionRole.message_id == message_id)
+            if user:
+                return user
+            
+            return None
         
 
 async def init_database():
