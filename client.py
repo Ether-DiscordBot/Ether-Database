@@ -5,13 +5,12 @@ from typing import List, Optional
 from beanie import init_beanie, Document
 from discord.ext.commands import Context
 from pydantic import BaseModel
-from discord import (Guild as GuildModel,
-                     User as UserModel,
-                     Member as MemberModel
-                     )
+from discord import Guild as GuildModel, User as UserModel, Member as MemberModel
 from motor.motor_asyncio import AsyncIOMotorClient
+
 try:
     from ether.core.utils import LevelsHandler
+
     levels_handler_import = True
 except ImportError:
     levels_handler_import = False
@@ -21,125 +20,136 @@ class Database:
 
     client = None
 
-
     class Guild:
         async def create(guild_id: int):
             guild = Guild(id=guild_id)
-            
+
             await guild.insert()
-            
+
             return await Database.Guild.get_or_none(guild_id)
-            
+
         async def get_or_create(guild_id: int):
             guild = await Database.Guild.get_or_none(guild_id)
             if guild:
                 return guild
-            
+
             return await Database.Guild.create(guild_id)
-        
+
         async def get_or_none(guild_id: int):
             guild = await Guild.find_one(Guild.id == guild_id)
             if guild:
                 return guild
-            
+
             return None
-        
+
         class Logs:
             class Moderation:
-                async def set(guild_id: int, enabled: bool, channel_id: Optional[int] = None):
+                async def set(
+                    guild_id: int, enabled: bool, channel_id: Optional[int] = None
+                ):
                     guild = await Database.Guild.get_or_none(guild_id)
-                    
+
                     if not guild:
                         return None
-                    
+
                     if channel_id:
-                        moderation_logs = ModerationLog(channel_id=channel_id, enabled=enabled)
+                        moderation_logs = ModerationLog(
+                            channel_id=channel_id, enabled=enabled
+                        )
                     else:
                         if not (guild.logs and guild.logs.moderation):
                             return None
-                        moderation_logs = ModerationLog(channel_id=guild.logs.moderation.channel_id, enabled=enabled)
-                    
+                        moderation_logs = ModerationLog(
+                            channel_id=guild.logs.moderation.channel_id, enabled=enabled
+                        )
+
                     if guild.logs:
                         await guild.set({Guild.logs.moderation: moderation_logs})
                     else:
                         await guild.set({Guild.logs: Logs(moderation=moderation_logs)})
-                        
+
                     return True
-                    
-                    
-                    
-    
+
     class GuildUser:
         async def create(user_id: int, guild_id: int):
             user = GuildUser(id=user_id, guild_id=guild_id)
-            
+
             await user.insert()
-            
+
             return await Database.GuildUser.get_or_none(user_id, guild_id)
-            
+
         async def get_or_create(user_id: int, guild_id: int):
             user = await Database.GuildUser.get_or_none(user_id, guild_id)
             if user:
                 return user
-            
+
             return await Database.GuildUser.create(user_id, guild_id)
-        
+
         async def get_or_none(user_id: int, guild_id: int):
-            user = await GuildUser.find_one(GuildUser.id == user_id and GuildUser.guild_id == guild_id)
+            user = await GuildUser.find_one(
+                GuildUser.id == user_id and GuildUser.guild_id == guild_id
+            )
             if user:
                 return user
-            
+
             return None
 
         async def add_exp(user_id, guild_id, amount):
-            if not levels_handler_import: return
-            
+            if not levels_handler_import:
+                return
+
             user = await Database.GuildUser.get_or_none(user_id, guild_id)
-            
+
             if not user:
                 return
-            
+
             new_exp = user.exp + amount
             next_level = LevelsHandler.get_next_level(user.levels)
             if next_level <= new_exp:
-                await user.set({GuildUser.exp: new_exp - next_level, GuildUser.levels: user.levels + 1})
+                await user.set(
+                    {
+                        GuildUser.exp: new_exp - next_level,
+                        GuildUser.levels: user.levels + 1,
+                    }
+                )
                 return user.levels
-            
+
             await user.set({GuildUser.exp: new_exp})
-    
-    
-    class ReactionRole():
+
+    class ReactionRole:
         async def create(message_id: int, options: ReactionRoleOption):
             reaction = ReactionRole(message_id=message_id, options=options)
-            
+
             await reaction.insert()
-            
+
             return await Database.ReactionRole.get_or_none(message_id)
-        
+
         async def get_or_create(message_id: int):
             reaction = await Database.ReactionRole.get_or_none(message_id)
             if reaction:
                 return reaction
-            
+
             return await Database.ReactionRole.create(message_id)
-        
+
         async def get_or_none(message_id: int):
-            reaction = await ReactionRole.find_one(ReactionRole.message_id == message_id)
+            reaction = await ReactionRole.find_one(
+                ReactionRole.message_id == message_id
+            )
             if reaction:
                 return reaction
-            
+
             return None
-        
-        class ReactionRoleOption():
+
+        class ReactionRoleOption:
             async def create(role_id, reaction_id):
                 option = ReactionRoleOption(role_id=role_id, reaction_id=reaction_id)
-                
+
                 return option
-        
+
 
 async def init_database():
     Database.client = AsyncIOMotorClient(os.environ["MONGO_DB_URI"]).dbot
-    
+
     await init_beanie(
         database=Database.client, document_models=[Guild, GuildUser, User]
     )
@@ -177,7 +187,7 @@ class Logs(BaseModel):
     join: Optional[JoinLog] = None
     leave: Optional[LeaveLog] = None
     moderation: Optional[ModerationLog] = None
-    
+
 
 class Guild(Document):
     class Settings:
@@ -207,7 +217,6 @@ class GuildUser(Document):
     exp: int = 0
     levels: int = 1
 
-
     async def from_id(user_id: int, guild_id: int):
         return await Database.GuildUser.get_or_create(user_id, guild_id)
 
@@ -224,7 +233,7 @@ class User(Document):
 
     id: int
     description: Optional[str] = None
-    card_color: int = 0xa5d799
+    card_color: int = 0xA5D799
 
     async def from_id(user_id: int):
         return await Database.User.get_or_create(user_id)
