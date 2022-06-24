@@ -264,7 +264,7 @@ class ReactionRole(Document):
     options: List[ReactionRoleOption]
     
     async def from_id(message_id: int):
-        return await Database.ReactionRole.get_or_create(message_id)
+        return await Database.ReactionRole.get_or_none(message_id)
 
     async def from_message_object(message: MessageModel):
         return await ReactionRole.from_id(message.id)
