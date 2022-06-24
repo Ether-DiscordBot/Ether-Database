@@ -149,7 +149,7 @@ async def init_database():
     Database.client = AsyncIOMotorClient(os.environ["MONGO_DB_URI"]).dbot
 
     await init_beanie(
-        database=Database.client, document_models=[Guild, GuildUser, User]
+        database=Database.client, document_models=[Guild, GuildUser, User, ReactionRole]
     )
 
 
