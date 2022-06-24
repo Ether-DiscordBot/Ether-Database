@@ -109,7 +109,7 @@ class Database:
     
     
     class ReactionRole():
-        async def create(message_id, options):
+        async def create(message_id: int, options: ReactionRoleOption):
             reaction = ReactionRole(message_id=message_id, options=options)
             
             await reaction.insert()
@@ -117,18 +117,24 @@ class Database:
             return await Database.ReactionRole.get_or_none(message_id)
         
         async def get_or_create(message_id: int):
-            user = await Database.ReactionRole.get_or_none(message_id)
-            if user:
-                return user
+            reaction = await Database.ReactionRole.get_or_none(message_id)
+            if reaction:
+                return reaction
             
             return await Database.ReactionRole.create(message_id)
         
         async def get_or_none(message_id: int):
-            user = await ReactionRole.find_one(ReactionRole.message_id == message_id)
-            if user:
-                return user
+            reaction = await ReactionRole.find_one(ReactionRole.message_id == message_id)
+            if reaction:
+                return reaction
             
             return None
+        
+        class ReactionRoleOption():
+            async def create(role_id, reaction_id):
+                option = ReactionRoleOption(role_id=role_id, reaction_id=reaction_id)
+                
+                return option
         
 
 async def init_database():
