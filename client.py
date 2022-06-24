@@ -5,7 +5,7 @@ from typing import List, Optional, Union
 from beanie import init_beanie, Document
 from discord.ext.commands import Context
 from pydantic import BaseModel
-from discord import Guild as GuildModel, User as UserModel, Member as MemberModel
+from discord import Guild as GuildModel, User as UserModel, Member as MemberModel, Message as MessageModel
 from motor.motor_asyncio import AsyncIOMotorClient
 
 try:
@@ -262,3 +262,12 @@ class ReactionRole(Document):
 
     message_id: int
     options: List[ReactionRoleOption]
+    
+    async def from_id(message_id: int):
+        return await Database.ReactionRole.get_or_create(message_id)
+
+    async def from_user_object(message: MessageModel):
+        return await ReactionRole.from_id(message.id)
+
+    async def from_context(ctx: Context):
+        return await ReactionRole.from_id(ctx.message.id)
