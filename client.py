@@ -141,7 +141,7 @@ class Database:
             return None
 
         class ReactionRoleOption:
-            async def create(role_id: int, reaction: str):
+            def create(role_id: int, reaction: str):
                 option = ReactionRoleOption(role_id=role_id, reaction=reaction)
 
                 return option
