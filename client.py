@@ -142,9 +142,7 @@ class Database:
 
         class ReactionRoleOption:
             def create(role_id: int, reaction: str):
-                option = ReactionRoleOption(role_id=role_id, reaction=reaction)
-
-                return option
+                return ReactionRoleOption(role_id=role_id, reaction=reaction)
 
 
 async def init_database():
@@ -255,7 +253,7 @@ class Playlist(Document):
 
 class ReactionRoleOption(BaseModel):
     role_id: int
-    reaction: int
+    reaction: str
 
 
 class ReactionRole(Document):
