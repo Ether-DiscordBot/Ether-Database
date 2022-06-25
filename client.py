@@ -144,12 +144,36 @@ class Database:
             def create(role_id: int, reaction: str):
                 return ReactionRoleOption(role_id=role_id, reaction=reaction)
 
+    class Playlist:
+        async def create(message_id: int, playlist_link: str):
+            playlist = Playlist(message_id=message_id, playlist_link=playlist_link)
+
+            await playlist.insert()
+
+            return await Database.Playlist.get_or_none(message_id)
+
+        async def get_or_create(message_id: int):
+            playlist = await Database.Playlist.get_or_none(message_id)
+            if playlist:
+                return playlist
+
+            return await Database.Playlist.create(message_id)
+
+        async def get_or_none(message_id: int):
+            playlist = await Playlist.find_one(
+                Playlist.message_id == message_id
+            )
+            if playlist:
+                return playlist
+
+            return None
+
 
 async def init_database():
     Database.client = AsyncIOMotorClient(os.environ["MONGO_DB_URI"]).dbot
 
     await init_beanie(
-        database=Database.client, document_models=[Guild, GuildUser, User, ReactionRole]
+        database=Database.client, document_models=[Guild, GuildUser, User, ReactionRole, Playlist]
     )
 
 
@@ -249,6 +273,15 @@ class Playlist(Document):
 
     message_id: int
     playlist_link: str
+    
+    async def from_id(message_id: int):
+        return await Database.Playlist.get_or_none(message_id)
+
+    async def from_message_object(message: MessageModel):
+        return await ReactionRole.from_id(message.id)
+
+    async def from_context(ctx: Context):
+        return await ReactionRole.from_id(ctx.message.id)
 
 
 class ReactionRoleOption(BaseModel):
