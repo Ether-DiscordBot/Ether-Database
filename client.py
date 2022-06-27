@@ -1,6 +1,6 @@
 import asyncio
 import os
-from typing import List, Optional, Union
+from typing import List, Optional
 
 from beanie import init_beanie, Document
 from discord.ext.commands import Context
@@ -218,6 +218,7 @@ class Guild(Document):
     id: int
     logs: Logs = None
     auto_role: Optional[int] = None
+    music_channel_id: Optional[int] = None
 
     async def from_id(guild_id: int):
         return await Database.Guild.get_or_create(guild_id)
